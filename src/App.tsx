@@ -6,12 +6,12 @@
  *
  */
 
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
-import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import {
   $isTextNode,
   DOMConversionMap,
@@ -23,18 +23,21 @@ import {
   LexicalNode,
   ParagraphNode,
   TextNode,
-} from 'lexical';
+} from "lexical";
 
-import ExampleTheme from './ExampleTheme';
-import ToolbarPlugin from './plugins/ToolbarPlugin';
-import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {parseAllowedColor, parseAllowedFontSize} from './styleConfig';
+import ExampleTheme from "./ExampleTheme";
+import ToolbarPlugin from "./plugins/ToolbarPlugin";
+import TreeViewPlugin from "./plugins/TreeViewPlugin";
+import { parseAllowedColor, parseAllowedFontSize } from "./styleConfig";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { AutoLinkNode, LinkNode } from "@lexical/link";
+import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
 
-const placeholder = 'Enter some rich text...';
+const placeholder = "Enter some rich text...";
 
 const removeStylesExportDOM = (
   editor: LexicalEditor,
-  target: LexicalNode,
+  target: LexicalNode
 ): DOMExportOutput => {
   const output = target.exportDOM(editor);
   if (output && isHTMLElement(output.element)) {
@@ -45,10 +48,10 @@ const removeStylesExportDOM = (
       output.element,
       ...output.element.querySelectorAll('[style],[class],[dir="ltr"]'),
     ]) {
-      el.removeAttribute('class');
-      el.removeAttribute('style');
-      if (el.getAttribute('dir') === 'ltr') {
-        el.removeAttribute('dir');
+      el.removeAttribute("class");
+      el.removeAttribute("style");
+      if (el.getAttribute("dir") === "ltr") {
+        el.removeAttribute("dir");
       }
     }
   }
@@ -66,17 +69,17 @@ const exportMap: DOMExportOutputMap = new Map<
 const getExtraStyles = (element: HTMLElement): string => {
   // Parse styles from pasted input, but only if they match exactly the
   // sort of styles that would be produced by exportDOM
-  let extraStyles = '';
+  let extraStyles = "";
   const fontSize = parseAllowedFontSize(element.style.fontSize);
   const backgroundColor = parseAllowedColor(element.style.backgroundColor);
   const color = parseAllowedColor(element.style.color);
-  if (fontSize !== '' && fontSize !== '15px') {
+  if (fontSize !== "" && fontSize !== "15px") {
     extraStyles += `font-size: ${fontSize};`;
   }
-  if (backgroundColor !== '' && backgroundColor !== 'rgb(255, 255, 255)') {
+  if (backgroundColor !== "" && backgroundColor !== "rgb(255, 255, 255)") {
     extraStyles += `background-color: ${backgroundColor};`;
   }
-  if (color !== '' && color !== 'rgb(0, 0, 0)') {
+  if (color !== "" && color !== "rgb(0, 0, 0)") {
     extraStyles += `color: ${color};`;
   }
   return extraStyles;
@@ -107,7 +110,7 @@ const constructImportMap = (): DOMConversionMap => {
           }
           const extraStyles = getExtraStyles(element);
           if (extraStyles) {
-            const {forChild} = output;
+            const { forChild } = output;
             return {
               ...output,
               forChild: (child, parent) => {
@@ -133,13 +136,33 @@ const editorConfig = {
     export: exportMap,
     import: constructImportMap(),
   },
-  namespace: 'React.js Demo',
-  nodes: [ParagraphNode, TextNode],
+  namespace: "React.js Demo",
+  nodes: [ParagraphNode, TextNode, LinkNode, AutoLinkNode],
   onError(error: Error) {
     throw error;
   },
   theme: ExampleTheme,
 };
+
+const URL_MATCHER =
+  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
+
+const MATCHERS = [
+  (text) => {
+    const match = URL_MATCHER.exec(text);
+    if (match === null) {
+      return null;
+    }
+    const fullMatch = match[0];
+    return {
+      index: match.index,
+      length: fullMatch.length,
+      text: fullMatch,
+      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+      // attributes: { rel: 'noreferrer', target: '_blank' }, // Optional link attributes
+    };
+  },
+];
 
 export default function App() {
   return (
@@ -162,6 +185,8 @@ export default function App() {
           <HistoryPlugin />
           <AutoFocusPlugin />
           <TreeViewPlugin />
+          <LinkPlugin />
+          <AutoLinkPlugin matchers={MATCHERS}/>
         </div>
       </div>
     </LexicalComposer>
