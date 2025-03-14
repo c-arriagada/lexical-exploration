@@ -32,6 +32,7 @@ import { parseAllowedColor, parseAllowedFontSize } from "./styleConfig";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
+import { ImageNode } from "./nodes/ImageNode";
 
 const placeholder = "Enter some rich text...";
 
@@ -137,7 +138,7 @@ const editorConfig = {
     import: constructImportMap(),
   },
   namespace: "React.js Demo",
-  nodes: [ParagraphNode, TextNode, LinkNode, AutoLinkNode],
+  nodes: [ParagraphNode, TextNode, LinkNode, AutoLinkNode, ImageNode],
   onError(error: Error) {
     throw error;
   },

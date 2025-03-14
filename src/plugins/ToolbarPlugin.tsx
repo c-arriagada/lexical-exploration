@@ -12,6 +12,7 @@ import {
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
+  createCommand,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   REDO_COMMAND,
@@ -20,12 +21,15 @@ import {
 } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
+import { $createImageNode } from "../nodes/ImageNode.tsx";
 
 const LowPriority = 1;
 
 function Divider() {
   return <div className="divider" />;
 }
+
+export const INSERT_IMAGE_COMMAND = createCommand("INSERT_IMAGE")
 
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -84,6 +88,22 @@ export default function ToolbarPlugin() {
         (payload) => {
           console.log("toggle link", payload)
           return false;
+        },
+        LowPriority
+      ),
+      editor.registerCommand(
+        INSERT_IMAGE_COMMAND,
+        (payload) => {
+          const {src, alt} = payload
+          console.log("inserting image", src)
+          editor.update(() => {
+            const imageNode = $createImageNode(src, alt)
+            const selection = $getSelection();
+            if(selection) {
+              selection.insertNodes([imageNode])
+            }
+          })
+          return true;
         },
         LowPriority
       )
@@ -195,6 +215,16 @@ export default function ToolbarPlugin() {
         aria-label="Hyperlink"
       >
         <i className="hyperlink" />
+      </button>
+      <button
+        onClick={() => {
+          const url = prompt("Enter image url:")
+          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {src: url, alt: "Image"});
+        }}
+        className="toolbar-item"
+        aria-label="Image"
+      >
+        Insert Image
       </button>{" "}
     </div>
   );
