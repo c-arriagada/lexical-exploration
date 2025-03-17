@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+import React, { useRef } from "react";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -17,6 +17,7 @@ import {
   DOMConversionMap,
   DOMExportOutput,
   DOMExportOutputMap,
+  EditorState,
   isHTMLElement,
   Klass,
   LexicalEditor,
@@ -33,6 +34,7 @@ import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
 import { ImageNode } from "./nodes/ImageNode";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 
 const placeholder = "Enter some rich text...";
 
@@ -159,13 +161,25 @@ const MATCHERS = [
       index: match.index,
       length: fullMatch.length,
       text: fullMatch,
-      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+      url: fullMatch.startsWith("http") ? fullMatch : `https://${fullMatch}`,
       // attributes: { rel: 'noreferrer', target: '_blank' }, // Optional link attributes
     };
   },
 ];
 
 export default function App() {
+  const editorStateRef = useRef(null);
+
+  const handleSave = () => {
+    console.log("inside handle Save");
+    if (editorStateRef.current) {
+      const state = JSON.stringify(editorStateRef.current);
+      console.log("saving editor state", state);
+    } else {
+      console.log("editorStateRef is still null");
+    }
+  };
+
   return (
     <LexicalComposer initialConfig={editorConfig}>
       <div className="editor-container">
@@ -187,8 +201,15 @@ export default function App() {
           <AutoFocusPlugin />
           <TreeViewPlugin />
           <LinkPlugin />
-          <AutoLinkPlugin matchers={MATCHERS}/>
+          <AutoLinkPlugin matchers={MATCHERS} />
+          <OnChangePlugin
+            onChange={(editorState) => {
+              editorStateRef.current = editorState;
+              console.log("Updated editorStateRef:", editorState);
+            }}
+          />
         </div>
+        <button onClick={handleSave}>Save</button>
       </div>
     </LexicalComposer>
   );
