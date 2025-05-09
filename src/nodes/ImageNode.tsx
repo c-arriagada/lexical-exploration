@@ -1,22 +1,49 @@
 import { DecoratorNode } from "lexical";
-import React from "react"
+import type { NodeKey, SerializedLexicalNode, Spread } from "lexical";
+import React from "react";
 
-export class ImageNode extends DecoratorNode {
+export type SerializedImageNode = Spread<
+  {
+    altText: string;
+    key?: NodeKey;
+    src: string;
+    type: "image";
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
+export class ImageNode extends DecoratorNode<JSX.Element> {
   __src;
-  __alt;
+  __altText;
 
   static getType() {
     return "image";
   }
 
-  static clone(node) {
-    return new ImageNode(node.__src, node.__alt, node.__key);
+  static clone(node: ImageNode) {
+    return new ImageNode(node.__src, node.__altText, node.__key);
   }
 
-  constructor(src, alt, key) {
+  constructor(src: string, altText: string, key?: NodeKey) {
     super(key);
     this.__src = src;
-    this.__alt = alt;
+    this.__altText = altText;
+  }
+
+  static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    const { altText, src } = serializedNode;
+    const node = $createImageNode(src, altText);
+    return node;
+  }
+
+  exportJSON(): SerializedImageNode {
+    return {
+      altText: this.getAltText(),
+      src: this.getSrc(),
+      type: "image",
+      version: 1,
+    };
   }
 
   createDOM() {
@@ -31,13 +58,34 @@ export class ImageNode extends DecoratorNode {
     return false;
   }
 
+  getAltText(): string {
+    return this.__altText;
+  }
+
+  getSrc(): string {
+    return this.__src;
+  }
+
   decorate() {
     return (
-      <img src={this.__src} alt={this.__alt} style={{ maxWidth: "100%" }} />
+      <img
+        src={this.__src}
+        alt={this.__altText}
+        style={{
+          maxWidth: "100%",
+          maxHeight: "400px",
+          height: "auto",
+          objectFit: "contain", // maintains aspect ratio
+        }}
+      />
     );
   }
 }
 
-export function $createImageNode(src, alt = "", key=null) {
-  return new ImageNode(src, alt, key);
+export function $createImageNode(
+  src: string,
+  altText: string = "",
+  key?: NodeKey
+) {
+  return new ImageNode(src, altText, key);
 }

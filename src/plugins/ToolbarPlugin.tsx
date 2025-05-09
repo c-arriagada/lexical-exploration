@@ -29,7 +29,7 @@ function Divider() {
   return <div className="divider" />;
 }
 
-export const INSERT_IMAGE_COMMAND = createCommand("INSERT_IMAGE")
+export const INSERT_IMAGE_COMMAND = createCommand("INSERT_IMAGE");
 
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -40,6 +40,30 @@ export default function ToolbarPlugin() {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImageUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+            src: reader.result,
+            alt: file.name,
+          });
+        }
+      };
+      reader.readAsDataURL(file); // this will convert the image to a base64 string
+    }
+  };
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -86,7 +110,7 @@ export default function ToolbarPlugin() {
       editor.registerCommand(
         TOGGLE_LINK_COMMAND,
         (payload) => {
-          console.log("toggle link", payload)
+          console.log("toggle link", payload);
           return false;
         },
         LowPriority
@@ -94,15 +118,17 @@ export default function ToolbarPlugin() {
       editor.registerCommand(
         INSERT_IMAGE_COMMAND,
         (payload) => {
-          const {src, alt} = payload
-          console.log("inserting image", src)
+          const { src, alt } = payload;
+          console.log("inserting image", src);
           editor.update(() => {
-            const imageNode = $createImageNode(src, alt)
+            const imageNode = $createImageNode(src, alt);
+            const exportImageNode = imageNode.exportJSON();
+            console.log("image exportJSON", exportImageNode);
             const selection = $getSelection();
-            if(selection) {
-              selection.insertNodes([imageNode])
+            if (selection) {
+              selection.insertNodes([imageNode]);
             }
-          })
+          });
           return true;
         },
         LowPriority
@@ -208,24 +234,28 @@ export default function ToolbarPlugin() {
       </button>
       <button
         onClick={() => {
-          const url = prompt("Enter url: ", "https://")
+          const url = prompt("Enter url: ", "https://");
           editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
         }}
         className="toolbar-item"
         aria-label="Hyperlink"
       >
-        <i className="hyperlink" />
+        <i className="format hyperlink" />
       </button>
       <button
-        onClick={() => {
-          const url = prompt("Enter image url:")
-          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {src: url, alt: "Image"});
-        }}
+        onClick={handleImageUpload}
         className="toolbar-item"
         aria-label="Image"
       >
-        Insert Image
-      </button>{" "}
+        <i className="format image" />
+      </button>
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
     </div>
   );
 }
